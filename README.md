@@ -150,8 +150,9 @@ When all properties are populated with values everything works perfectly fine.
     }
 ```
 Next we’ll try serialization with no properties populated. An error is expected caused by unknown fields. The reason is that by default, Hazelcast will create its internal definition of a class based on the first instance serialized. Because the properties are null, Hazelcast will not add them to the definition.
-```
+
 Stack trace:
+```
 com.hazelcast.nio.serialization.HazelcastSerializationException: Unknown field name: 'dateProperty' for ClassDefinition {id: 1, version: 0}
 	at com.hazelcast.nio.serialization.DefaultPortableReader.throwUnknownFieldException(DefaultPortableReader.java:222)
 	at com.hazelcast.nio.serialization.DefaultPortableReader.readNestedPosition(DefaultPortableReader.java:301)
@@ -243,12 +244,31 @@ In writePortable() add the following:
 In your class definition building add:
 ```
         ClassDefinitionBuilder portableClassBuilder = new ClassDefinitionBuilder(1, 1);
-	 ....
-        portableClassBuilder.addPortableField("nestedProperty", nestedPortableClassDefinition);
-        portableClassBuilder.addBooleanField("__hasValue_nestedProperty");
-        portableClassBuilder.addPortableArrayField("listProperty", nestedPortableClassDefinition);
-        portableClassBuilder.addBooleanField("__hasValue_listProperty");
+	....
+        portableClassBuilder.addUTFField("stringProperty");
+        portableClassBuilder.addBooleanField("__hasValue_stringProperty");
+	....
 ```
-Running the test again with completely empty objects should work just fine.
+Running the test again with completely empty objects should work just fine. But no, this will most likely happen:
+
+Stack trace:
+```
+com.hazelcast.nio.serialization.HazelcastSerializationException: java.lang.IllegalArgumentException
+	....
+Caused by: java.lang.IllegalArgumentException
+	at com.hazelcast.nio.serialization.ByteArrayObjectDataInput.position(ByteArrayObjectDataInput.java:487)
+	at com.hazelcast.nio.serialization.DefaultPortableReader.end(DefaultPortableReader.java:318)
+	at com.hazelcast.nio.serialization.PortableSerializer.read(PortableSerializer.java:80)
+	at com.hazelcast.nio.serialization.PortableSerializer.readAndInitialize(PortableSerializer.java:108)
+	at com.hazelcast.nio.serialization.DefaultPortableReader.readPortable(DefaultPortableReader.java:213)
+	at codeset.portable.tips.PortableClass.readPortable(PortableClass.java:42)
+	at com.hazelcast.nio.serialization.PortableSerializer.read(PortableSerializer.java:79)
+	at com.hazelcast.nio.serialization.PortableSerializer.read(PortableSerializer.java:66)
+	at com.hazelcast.nio.serialization.PortableSerializer.read(PortableSerializer.java:29)
+	at com.hazelcast.nio.serialization.StreamSerializerAdapter.read(StreamSerializerAdapter.java:63)
+	at com.hazelcast.nio.serialization.SerializationServiceImpl.readObject(SerializationServiceImpl.java:285)
+	at com.hazelcast.nio.serialization.SerializationServiceImpl.toObject(SerializationServiceImpl.java:262)
+	... 31 more
+```
 
 Note: codeset provides a reflection based ClassDefinitionBuilder [INSERT REFERENCE]. It will reflect on a class and build the class definition during configuration including the above logic. 
