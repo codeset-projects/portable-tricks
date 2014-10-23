@@ -229,11 +229,11 @@ Hazelcast is still not happy, null UTF fields are still a problem. Adding a chec
         }
 ```
 ####Case 4 - Null checks added
-The only way we got around this was by adding a null check flag to the byte stream. Note: this also has to be added to the class definition.
+The only way we got around this was by adding a null check flag to the byte stream. Basically, for any nullable field, we'll add a boolean field named "_has__" + <fieldName>. If there is a value present, we'll write out true as a value. Before attempting to read a field, we'll check if the _has__ field is true. Don't forget to add this to be added to the class definition as well.
 
 In readPortable() add the following:
 ```
-        if(reader.readBoolean("__hasValue_stringProperty")) {
+        if(reader.readBoolean("_has__stringProperty")) {
             stringProperty = reader.readUTF("stringProperty");
         }
 ```
@@ -241,7 +241,7 @@ In writePortable() add the following:
 ```
         if(stringProperty != null) {
             writer.writeUTF("stringProperty", stringProperty);
-            writer.writeBoolean("__hasValue_stringProperty", true);
+            writer.writeBoolean("_has__stringProperty", true);
         }
 ```
 In your class definition building add:
@@ -249,7 +249,7 @@ In your class definition building add:
         ClassDefinitionBuilder portableClassBuilder = new ClassDefinitionBuilder(1, 1);
 	....
         portableClassBuilder.addUTFField("stringProperty");
-        portableClassBuilder.addBooleanField("__hasValue_stringProperty");
+        portableClassBuilder.addBooleanField("_has__stringProperty");
 	....
 ```
 Running the test again with completely empty objects should work just fine. But no, this will most likely happen:
@@ -277,10 +277,10 @@ We need to add the null checks to the nested complex properties as well:
 
 In readPortable() add the following:
 ```
-        if(reader.readBoolean("__hasValue_nestedProperty")) {
+        if(reader.readBoolean("_has__nestedProperty")) {
             nestedProperty = reader.readPortable("nestedProperty");
         }
-        if(reader.readBoolean("__hasValue_listProperty")) {
+        if(reader.readBoolean("_has__listProperty")) {
             Portable[] listPropertyArr = reader.readPortableArray("listProperty");
             for (Portable p:listPropertyArr) {
                 listProperty.add((NestedPortableClass) p);  
@@ -291,11 +291,11 @@ In writePortable() add the following:
 ```
         if(nestedProperty != null) {
             writer.writePortable("nestedProperty", nestedProperty);
-            writer.writeBoolean("__hasValue_nestedProperty", true);
+            writer.writeBoolean("_has__nestedProperty", true);
         }
         if(listProperty != null && !listProperty.isEmpty()) {
             writer.writePortableArray("listProperty", listProperty.toArray(new Portable[listProperty.size()]));
-            writer.writeBoolean("__hasValue_nestedProperty", true);
+            writer.writeBoolean("_has__nestedProperty", true);
         }
 ```
 In your class definition building add:
@@ -303,9 +303,9 @@ In your class definition building add:
         ClassDefinitionBuilder portableClassBuilder = new ClassDefinitionBuilder(1, 1);
 	....
         portableClassBuilder.addPortableField("nestedProperty", nestedPortableClassDefinition);
-        portableClassBuilder.addBooleanField("__hasValue_nestedProperty");
+        portableClassBuilder.addBooleanField("_has__nestedProperty");
         portableClassBuilder.addPortableArrayField("listProperty", nestedPortableClassDefinition);
-        portableClassBuilder.addBooleanField("__hasValue_listProperty");
+        portableClassBuilder.addBooleanField("_has__listProperty");
 	....
 ```
 
