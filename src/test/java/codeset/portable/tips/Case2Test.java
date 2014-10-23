@@ -1,6 +1,7 @@
 package codeset.portable.tips;
 
 import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.fail;
 
 import java.util.UUID;
 
@@ -31,7 +32,7 @@ public class Case2Test {
         nestedPortableClassBuilder.addLongField("longProperty");
         nestedPortableClassBuilder.addDoubleField("doubleProperty");
         nestedPortableClassBuilder.addUTFField("stringProperty");
-        nestedPortableClassBuilder.addBooleanField("__hasValue_stringProperty");
+        nestedPortableClassBuilder.addBooleanField("_has__stringProperty");
         nestedPortableClassBuilder.addBooleanField("booleanProperty");
         ClassDefinition nestedPortableClassDefinition = nestedPortableClassBuilder.build();
         config.getSerializationConfig().addClassDefinition(nestedPortableClassDefinition);
@@ -42,12 +43,12 @@ public class Case2Test {
         portableClassBuilder.addLongField("longProperty");
         portableClassBuilder.addDoubleField("doubleProperty");
         portableClassBuilder.addUTFField("stringProperty");
-        portableClassBuilder.addBooleanField("__hasValue_stringProperty");
+        portableClassBuilder.addBooleanField("_has__stringProperty");
         portableClassBuilder.addBooleanField("booleanProperty");
         portableClassBuilder.addPortableField("nestedProperty", nestedPortableClassDefinition);
-        portableClassBuilder.addBooleanField("__hasValue_nestedProperty");
+        portableClassBuilder.addBooleanField("_has__nestedProperty");
         portableClassBuilder.addPortableArrayField("listProperty", nestedPortableClassDefinition);
-        portableClassBuilder.addBooleanField("__hasValue_listProperty");
+        portableClassBuilder.addBooleanField("_has__listProperty");
         config.getSerializationConfig().addClassDefinition(portableClassBuilder.build());
 
         instance1 = Hazelcast.newHazelcastInstance(config);

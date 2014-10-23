@@ -31,7 +31,7 @@ public class NestedPortableClass implements Portable {
         intProperty = reader.readInt("intProperty");
         longProperty = reader.readLong("longProperty");
         doubleProperty = reader.readDouble("doubleProperty");
-        if(reader.readBoolean("__hasValue_stringProperty")) {
+        if(reader.readBoolean("_has__stringProperty")) {
             stringProperty = reader.readUTF("stringProperty");
         }
         booleanProperty = reader.readBoolean("booleanProperty");
@@ -53,7 +53,7 @@ public class NestedPortableClass implements Portable {
         }
         if(stringProperty != null) {
             writer.writeUTF("stringProperty", stringProperty);
-            writer.writeBoolean("__hasValue_stringProperty", true);
+            writer.writeBoolean("_has__stringProperty", true);
         }
         if(booleanProperty != null) {
             writer.writeBoolean("booleanProperty", booleanProperty);

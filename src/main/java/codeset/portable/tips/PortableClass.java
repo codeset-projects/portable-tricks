@@ -35,14 +35,14 @@ public class PortableClass implements Portable {
         intProperty = reader.readInt("intProperty");
         longProperty = reader.readLong("longProperty");
         doubleProperty = reader.readDouble("doubleProperty");
-        if(reader.readBoolean("__hasValue_stringProperty")) {
+        if(reader.readBoolean("_has__stringProperty")) {
             stringProperty = reader.readUTF("stringProperty");
         }
         booleanProperty = reader.readBoolean("booleanProperty");
-        if(reader.readBoolean("__hasValue_nestedProperty")) {
+        if(reader.readBoolean("_has__nestedProperty")) {
             nestedProperty = reader.readPortable("nestedProperty");
         }
-        if(reader.readBoolean("__hasValue_listProperty")) {
+        if(reader.readBoolean("_has__listProperty")) {
             Portable[] listPropertyArr = reader.readPortableArray("listProperty");
             for (Portable p:listPropertyArr) {
                 listProperty.add((NestedPortableClass) p);  
@@ -66,18 +66,18 @@ public class PortableClass implements Portable {
         }
         if(stringProperty != null) {
             writer.writeUTF("stringProperty", stringProperty);
-            writer.writeBoolean("__hasValue_stringProperty", true);
+            writer.writeBoolean("_has__stringProperty", true);
         }
         if(booleanProperty != null) {
             writer.writeBoolean("booleanProperty", booleanProperty);
         }
         if(nestedProperty != null) {
             writer.writePortable("nestedProperty", nestedProperty);
-            writer.writeBoolean("__hasValue_nestedProperty", true);
+            writer.writeBoolean("_has__nestedProperty", true);
         }
         if(listProperty != null && !listProperty.isEmpty()) {
             writer.writePortableArray("listProperty", listProperty.toArray(new Portable[listProperty.size()]));
-            writer.writeBoolean("__hasValue_nestedProperty", true);
+            writer.writeBoolean("_has__nestedProperty", true);
         }
     }
 
