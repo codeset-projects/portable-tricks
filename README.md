@@ -79,14 +79,14 @@ The factory id is used by Hazelcast to determine which PortableFactory to use. Y
     }
 ```
 The class id is used by the PortableFactory to determine which class it should instantiate. Of course this could be done with reflection, but it would have a performance impact.
-
+```
     @Override
     public int getClassId() {
         return 1;
     }
-
+```
 To be able to use these classes we need to create a PortableFactory implementation. It will be used by Hazelcast when an object is being serialized to create new instances.
-
+```
 public class MyPortableFactory implements PortableFactory {
     @Override
     public Portable create(int classId) {
@@ -99,11 +99,11 @@ public class MyPortableFactory implements PortableFactory {
         }
     }
 }
-
+```
 Next we’ll create a test case to show some of the challenges we need to address. The first test case will attempt to serialize a PortableClass with no properties populated.
 
 All tests follow the same setup as per below. 
-
+```
 public class Test {
 
     private static HazelcastInstance instance1;
@@ -122,10 +122,10 @@ public class Test {
         instance1.shutdown();
         instance2.shutdown();
     }
-
-Case 1 - All properties populated
+```
+##Case 1 - All properties populated
 When all properties are populated with values everything works perfectly fine.
-
+```
     @Test
     public void testAllPropertiesPopulated() {
         String key = UUID.randomUUID().toString();
@@ -148,9 +148,9 @@ When all properties are populated with values everything works perfectly fine.
         PortableClass result = readMap.get(key);
         assertNotNull(result);
     }
-
+```
 Next we’ll try serialization with no properties populated. An error is expected caused by unknown fields. The reason is that by default, Hazelcast will create its internal definition of a class based on the first instance serialized. Because the properties are null, Hazelcast will not add them to the definition.
-
+```
 Stack trace:
 com.hazelcast.nio.serialization.HazelcastSerializationException: Unknown field name: 'dateProperty' for ClassDefinition {id: 1, version: 0}
 	at com.hazelcast.nio.serialization.DefaultPortableReader.throwUnknownFieldException(DefaultPortableReader.java:222)
@@ -158,8 +158,9 @@ com.hazelcast.nio.serialization.HazelcastSerializationException: Unknown field n
 	at com.hazelcast.nio.serialization.DefaultPortableReader.readPosition(DefaultPortableReader.java:261)
 	at com.hazelcast.nio.serialization.DefaultPortableReader.readLong(DefaultPortableReader.java:77)
 	at codeset.portable.tips.PortableClass.readPortable(PortableClass.java:31)
+```
 
-
+```
     @Test
     public void testNoPropertiesPopulated() {
         String key = UUID.randomUUID().toString();
@@ -176,9 +177,9 @@ com.hazelcast.nio.serialization.HazelcastSerializationException: Unknown field n
             
         }
     }
-
+```
 To make it work we need to manually define and add class definitions for all classes. We use the com.hazelcast.nio.serialization.ClassDefinitionBuilder to create these. The constructor arguments to the builder is the FactoryId and the ClassId for the class.
-
+```
     @Before
     public void before() {
         Config config = new Config();
@@ -208,46 +209,46 @@ To make it work we need to manually define and add class definitions for all cla
         instance1 = Hazelcast.newHazelcastInstance(config);
         instance2 = Hazelcast.newHazelcastInstance(config);
     }
-
+```
 If the test case is executed again, the unknown field error should have gone, but instead you’re likely to see something like:
-
+```
 Caused by: java.io.UTFDataFormatException: Length check failed, maybe broken bytestream or wrong stream position
 	at com.hazelcast.nio.UTFEncoderDecoder.readUTF0(UTFEncoderDecoder.java:506)
 	at com.hazelcast.nio.UTFEncoderDecoder.readUTF(UTFEncoderDecoder.java:78)
 	at com.hazelcast.nio.serialization.ByteArrayObjectDataInput.readUTF(ByteArrayObjectDataInput.java:450)
 	at com.hazelcast.nio.serialization.DefaultPortableReader.readUTF(DefaultPortableReader.java:86)
 	at codeset.portable.tips.PortableClass.readPortable(PortableClass.java:38)
-
+```
 Hazelcast is still not happy, null UTF fields are still a problem. Adding a check to see if the field exists doesn’t help:
-
+```
         if(reader.hasField("stringProperty")) {
             stringProperty = reader.readUTF("stringProperty");
         }
-
+```
 The only way we got around this was by adding a null check flag to the byte stream. Note: this also has to be added to the class definition.
 
 In readPortable() add the following:
-
+```
         if(reader.readBoolean("__hasValue_stringProperty")) {
             stringProperty = reader.readUTF("stringProperty");
         }
-
+```
 In writePortable() add the following:
-
+```
         if(stringProperty != null) {
             writer.writeUTF("stringProperty", stringProperty);
             writer.writeBoolean("__hasValue_stringProperty", true);
         }
-
+```
 In your class definition building add:
-
+```
         ClassDefinitionBuilder portableClassBuilder = new ClassDefinitionBuilder(1, 1);
 	 ....
         portableClassBuilder.addPortableField("nestedProperty", nestedPortableClassDefinition);
         portableClassBuilder.addBooleanField("__hasValue_nestedProperty");
         portableClassBuilder.addPortableArrayField("listProperty", nestedPortableClassDefinition);
         portableClassBuilder.addBooleanField("__hasValue_listProperty");
-
+```
 Running the test again with completely empty objects should work just fine.
 
 Note: codeset provides a reflection based ClassDefinitionBuilder [INSERT REFERENCE]. It will reflect on a class and build the class definition during configuration including the above logic. 
