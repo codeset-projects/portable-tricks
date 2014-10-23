@@ -123,7 +123,7 @@ public class Test {
         instance2.shutdown();
     }
 ```
-##Case 1 - All properties populated
+####Case 1 - All properties populated
 When all properties are populated with values everything works perfectly fine.
 ```
     @Test
@@ -149,6 +149,7 @@ When all properties are populated with values everything works perfectly fine.
         assertNotNull(result);
     }
 ```
+####Case 2 - No properties populated
 Next we’ll try serialization with no properties populated. An error is expected caused by unknown fields. The reason is that by default, Hazelcast will create its internal definition of a class based on the first instance serialized. Because the properties are null, Hazelcast will not add them to the definition.
 
 Stack trace:
@@ -179,6 +180,7 @@ com.hazelcast.nio.serialization.HazelcastSerializationException: Unknown field n
         }
     }
 ```
+####Case 3 - Class definitions provided
 To make it work we need to manually define and add class definitions for all classes. We use the com.hazelcast.nio.serialization.ClassDefinitionBuilder to create these. The constructor arguments to the builder is the FactoryId and the ClassId for the class.
 ```
     @Before
@@ -226,6 +228,7 @@ Hazelcast is still not happy, null UTF fields are still a problem. Adding a chec
             stringProperty = reader.readUTF("stringProperty");
         }
 ```
+####Case 4 - Null checks added
 The only way we got around this was by adding a null check flag to the byte stream. Note: this also has to be added to the class definition.
 
 In readPortable() add the following:
@@ -270,5 +273,41 @@ Caused by: java.lang.IllegalArgumentException
 	at com.hazelcast.nio.serialization.SerializationServiceImpl.toObject(SerializationServiceImpl.java:262)
 	... 31 more
 ```
+We need to add the null checks to the nested complex properties as well:
+In readPortable() add the following:
+```
+        if(reader.readBoolean("__hasValue_nestedProperty")) {
+            nestedProperty = reader.readPortable("nestedProperty");
+        }
+        if(reader.readBoolean("__hasValue_listProperty")) {
+            Portable[] listPropertyArr = reader.readPortableArray("listProperty");
+            for (Portable p:listPropertyArr) {
+                listProperty.add((NestedPortableClass) p);  
+            }
+        }
+```
+In writePortable() add the following:
+```
+        if(nestedProperty != null) {
+            writer.writePortable("nestedProperty", nestedProperty);
+            writer.writeBoolean("__hasValue_nestedProperty", true);
+        }
+        if(listProperty != null && !listProperty.isEmpty()) {
+            writer.writePortableArray("listProperty", listProperty.toArray(new Portable[listProperty.size()]));
+            writer.writeBoolean("__hasValue_nestedProperty", true);
+        }
+```
+In your class definition building add:
+```
+        ClassDefinitionBuilder portableClassBuilder = new ClassDefinitionBuilder(1, 1);
+	....
+        portableClassBuilder.addPortableField("nestedProperty", nestedPortableClassDefinition);
+        portableClassBuilder.addBooleanField("__hasValue_nestedProperty");
+        portableClassBuilder.addPortableArrayField("listProperty", nestedPortableClassDefinition);
+        portableClassBuilder.addBooleanField("__hasValue_listProperty");
+	....
+```
 
-Note: codeset provides a reflection based ClassDefinitionBuilder [INSERT REFERENCE]. It will reflect on a class and build the class definition during configuration including the above logic. 
+Now it works!
+
+codeset provides a reflection based ClassDefinitionBuilder [INSERT REFERENCE]. It will reflect on a class and build the class definition during configuration including the above logic. 
