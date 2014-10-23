@@ -6,7 +6,7 @@ The aim of this article is to give you some tips on how to use the Portable form
 We’ll start with a couple of domain objects which we would like to save in a Hazelcast map. The PortableClass has a number of simple properties and a nested object property of type NestedPortableClass. They both implement the com.hazelcast.nio.serialization.Portable interface.
 
 Saving and retrieving these classes should cover most of the common serialization scenarios.
-
+```
 public class PortableClass implements Portable {
     private Date dateProperty;
     private Integer intProperty;
@@ -16,7 +16,7 @@ public class PortableClass implements Portable {
     private Boolean booleanProperty;
     private NestedPortableClass nestedProperty;
     private List<NestedPortableClass> listProperty = new ArrayList<>();
-
+```
 The NestedPropertyClass is pretty much the same as the PortableClass but with no nested Portable properties.
 ```
     private NestedPortableClass nestedProperty;
