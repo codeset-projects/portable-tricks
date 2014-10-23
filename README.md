@@ -274,6 +274,7 @@ Caused by: java.lang.IllegalArgumentException
 	... 31 more
 ```
 We need to add the null checks to the nested complex properties as well:
+
 In readPortable() add the following:
 ```
         if(reader.readBoolean("__hasValue_nestedProperty")) {
