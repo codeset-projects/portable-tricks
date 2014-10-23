@@ -188,7 +188,7 @@ To make it work we need to manually define and add class definitions for all cla
         Config config = new Config();
         config.getSerializationConfig().addPortableFactory(1, new MyPortableFactory());
 
-        ClassDefinitionBuilder nestedPortableClassBuilder = new ClassDefinitionBuilder(1, 1);
+        ClassDefinitionBuilder nestedPortableClassBuilder = new ClassDefinitionBuilder(1, 2);
         nestedPortableClassBuilder.addLongField("dateProperty");
         nestedPortableClassBuilder.addIntField("intProperty");
         nestedPortableClassBuilder.addLongField("longProperty");
@@ -198,7 +198,7 @@ To make it work we need to manually define and add class definitions for all cla
         ClassDefinition nestedPortableClassDefinition = nestedPortableClassBuilder.build();
         config.getSerializationConfig().addClassDefinition(nestedPortableClassDefinition);
 
-        ClassDefinitionBuilder portableClassBuilder = new ClassDefinitionBuilder(1, 2);
+        ClassDefinitionBuilder portableClassBuilder = new ClassDefinitionBuilder(1, 1);
         portableClassBuilder.addLongField("dateProperty");
         portableClassBuilder.addIntField("intProperty");
         portableClassBuilder.addLongField("longProperty");
