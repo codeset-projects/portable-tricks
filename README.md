@@ -311,4 +311,4 @@ In your class definition building add:
 
 Now it works!
 
-codeset provides a reflection based ClassDefinitionBuilder [INSERT REFERENCE]. It will reflect on a class and build the class definition during configuration including the above logic. 
+codeset provides a reflection based ClassDefinitionBuilder in https://github.com/codeset-projects/portable-util. It will reflect on a class and build the class definition during configuration including the above logic. 
